@@ -1,0 +1,64 @@
+name: Bootstrap public release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "bootstrap/**"
+      - ".github/workflows/bootstrap.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Rebuild and verify source package
+        shell: bash
+        run: |
+          cat bootstrap/part* > /tmp/ufc.b64
+          base64 -d /tmp/ufc.b64 > /tmp/ufc.zip
+          echo "b5398d5100a20b06d0fcbb048514f6a00be0eaad5cabe574b46210bed639676e  /tmp/ufc.zip" | sha256sum -c -
+          unzip -t /tmp/ufc.zip
+          unzip -o /tmp/ufc.zip -d .
+          rm -rf bootstrap
+          rm -f .github/workflows/bootstrap.yml
+
+      - name: Commit public source
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Universal File Converter v3.2.0"
+            git push
+          fi
+
+      - name: Build release archive
+        shell: bash
+        run: |
+          VERSION=$(python -c 'import json; print(json.load(open("manifest.json", encoding="utf-8"))["version"])')
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          mkdir -p /tmp/release/UniversalFileConverter
+          rsync -a ./ /tmp/release/UniversalFileConverter/ --exclude '.git' --exclude '.github'
+          cd /tmp/release
+          zip -qr "UniversalFileConverter-${VERSION}.zip" UniversalFileConverter
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG="v${VERSION}"
+          ASSET="/tmp/release/UniversalFileConverter-${VERSION}.zip"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ASSET" --clobber
+          else
+            gh release create "$TAG" "$ASSET" --target main --title "Universal File Converter v${VERSION}" --notes-file RELEASE_NOTES.md
+          fi
