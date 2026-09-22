@@ -58,7 +58,8 @@ jobs:
           unzip -t /tmp/ufc.zip
           unzip -o /tmp/ufc.zip -d .
           rm -rf bootstrap
-          rm -f .github/workflows/bootstrap.yml
+          rm -f .github/workflows/release.yml
+          git restore .github/workflows/bootstrap.yml
 
       - name: Commit public source
         shell: bash
