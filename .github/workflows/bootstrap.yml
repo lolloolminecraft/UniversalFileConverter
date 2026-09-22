@@ -18,6 +18,37 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Repair truncated bootstrap chunk
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+
+          path = Path("bootstrap/part01")
+          data = path.read_text(encoding="utf-8")
+          target = "0f3fd9f54751e3c496a46ff11c439ccb54fddde28013bc49896e337260cf9066"
+
+          if hashlib.sha256(data.encode()).hexdigest() == target:
+              raise SystemExit(0)
+
+          if len(data) != 7999:
+              raise SystemExit(f"Unexpected part01 length: {len(data)}")
+
+          alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+          for i in range(len(data) + 1):
+              prefix = data[:i]
+              suffix = data[i:]
+              for ch in alphabet:
+                  candidate = prefix + ch + suffix
+                  if hashlib.sha256(candidate.encode()).hexdigest() == target:
+                      path.write_text(candidate, encoding="utf-8")
+                      print(f"Repaired part01 at offset {i}")
+                      raise SystemExit(0)
+
+          raise SystemExit("Unable to repair part01")
+          PY
+
       - name: Rebuild and verify source package
         shell: bash
         run: |
