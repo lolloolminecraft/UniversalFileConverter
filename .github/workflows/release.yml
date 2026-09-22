@@ -1,0 +1,70 @@
+name: Publish release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "manifest.json"
+      - "RELEASE_NOTES.md"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read extension version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(python -c 'import json; print(json.load(open("manifest.json", encoding="utf-8"))["version"])')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether release already exists
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build release ZIP
+        if: steps.existing.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          mkdir -p release/UniversalFileConverter
+          rsync -a ./ release/UniversalFileConverter/ \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'release'
+          cd release
+          zip -r "UniversalFileConverter-${VERSION}.zip" UniversalFileConverter >/dev/null
+
+      - name: Create tag and GitHub Release
+        if: steps.existing.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          gh release create "$TAG" \
+            "release/UniversalFileConverter-${VERSION}.zip" \
+            --target "$GITHUB_SHA" \
+            --title "Universal File Converter v${VERSION}" \
+            --notes-file RELEASE_NOTES.md
