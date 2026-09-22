@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Universal File Converter</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="app" id="app">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">⇄</div>
+        <div>
+          <h1>Universal File Converter</h1>
+          <p>Online API Converter · v3.2 Public</p>
+        </div>
+      </div>
+      <nav class="tabs" aria-label="Разделы">
+        <button class="tab active" type="button" data-tab="converter">Конвертер</button>
+        <button class="tab" type="button" data-tab="settings">Settings</button>
+      </nav>
+    </header>
+
+    <section class="view active" id="view-converter">
+      <div class="privacy-banner" id="privacyBanner">
+        <span class="privacy-dot"></span>
+        <div>
+          <strong>Онлайн-конвертация</strong>
+          <span>Файл отправляется выбранному стороннему API-сервису.</span>
+        </div>
+      </div>
+
+      <section class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="Добавить файлы">
+        <div class="drop-icon">＋</div>
+        <strong>Перетащите файлы сюда</strong>
+        <span>или</span>
+        <button class="primary small" type="button" id="pickFilesBtn">Выбрать файлы</button>
+        <input type="file" id="fileInput" multiple hidden>
+      </section>
+
+      <section class="batch-controls" id="batchControls" hidden>
+        <div class="field compact">
+          <label for="globalCategory">Категория назначения</label>
+          <select id="globalCategory"></select>
+        </div>
+        <div class="field compact grow">
+          <label for="globalTarget">Формат для всех</label>
+          <select id="globalTarget">
+            <option value="">Выберите формат</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="queue-section">
+        <div class="section-title">
+          <div>
+            <h2>Файлы</h2>
+            <span id="queueSummary">0 файлов</span>
+          </div>
+          <button class="text-button danger" type="button" id="clearBtn" hidden>Очистить</button>
+        </div>
+        <div class="empty-state" id="emptyState">
+          Добавьте один или несколько файлов. Поддержка пары форматов будет проверена через реальные API capability endpoints.
+        </div>
+        <div class="file-list" id="fileList"></div>
+      </section>
+
+      <div class="footer-actions">
+        <div class="provider-hint" id="providerHint">Для конвертации настройте хотя бы один API key.</div>
+        <button class="primary convert-all" type="button" id="convertAllBtn" disabled>Конвертировать всё</button>
+      </div>
+    </section>
+
+    <section class="view" id="view-settings">
+      <div class="settings-scroll">
+        <section class="settings-card">
+          <div class="settings-heading">
+            <div>
+              <h2>Appearance</h2>
+              <p>Настройка внешнего вида расширения.</p>
+            </div>
+            <button class="secondary small" type="button" id="resetAppearanceBtn">Сбросить оформление</button>
+          </div>
+
+          <div class="settings-grid">
+            <div class="field">
+              <label for="themeSelect">Theme</label>
+              <select id="themeSelect">
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </div>
+            <div class="field color-field">
+              <label for="accentColor">Accent color</label>
+              <input type="color" id="accentColor">
+            </div>
+            <div class="field color-field">
+              <label for="buttonColor">Button color</label>
+              <input type="color" id="buttonColor">
+            </div>
+            <div class="field color-field">
+              <label for="backgroundColor">Background</label>
+              <input type="color" id="backgroundColor">
+            </div>
+            <div class="field full">
+              <label for="radiusRange">Corner radius <span id="radiusValue"></span></label>
+              <input type="range" id="radiusRange" min="4" max="22" step="1">
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-card">
+          <div class="settings-heading">
+            <div>
+              <h2>API Providers</h2>
+              <p>Provider Manager проверяет совместимые API и автоматически переключается на следующий при сбое.</p>
+            </div>
+            <button class="secondary small" type="button" id="refreshCapabilitiesBtn">Обновить форматы</button>
+          </div>
+          <div class="security-note"><strong>Automatic failover: ON.</strong> При 401/403, quota/rate-limit, сетевой ошибке или 5xx проблемный provider временно пропускается, а очередь переходит к следующему совместимому API. API keys в Chrome extension storage не являются криптографически защищённым хранилищем.</div>
+          <div class="provider-list" id="providerList"></div>
+        </section>
+
+        <section class="settings-card">
+          <div class="settings-heading privacy-setting-heading">
+            <div>
+              <h2>Privacy</h2>
+              <p>Управление отправкой файлов сторонним сервисам.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="onlineToggle">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+          <div class="privacy-copy" id="onlineStatusCopy"></div>
+        </section>
+
+        <section class="settings-card api-links-card">
+          <div class="settings-heading">
+            <div>
+              <h2>Получить API ключи</h2>
+              <p>Официальные страницы провайдеров. Создайте ключ, затем вставьте его выше и нажмите «Проверить».</p>
+            </div>
+          </div>
+          <div class="api-link-list">
+            <a class="api-link" href="https://www.convertapi.com/a/authentication" target="_blank" rel="noopener noreferrer">
+              <span><strong>ConvertAPI</strong><small>Создать API Token</small></span><span class="api-link-arrow">↗</span>
+            </a>
+            <a class="api-link" href="https://cloudconvert.com/dashboard/api/v2/keys" target="_blank" rel="noopener noreferrer">
+              <span><strong>CloudConvert</strong><small>Создать API Key</small></span><span class="api-link-arrow">↗</span>
+            </a>
+            <a class="api-link" href="https://www.freeconvert.com/account/api-tokens" target="_blank" rel="noopener noreferrer">
+              <span><strong>FreeConvert</strong><small>Создать API Key</small></span><span class="api-link-arrow">↗</span>
+            </a>
+            <a class="api-link" href="https://convert3d.org/convert3dapi" target="_blank" rel="noopener noreferrer">
+              <span><strong>Convert3D</strong><small>Получить API Token</small></span><span class="api-link-arrow">↗</span>
+            </a>
+          </div>
+          <div class="api-links-note">ConvertAPI: используйте обычный API Token, не Master Token. CloudConvert: ключу нужны права <b>task.read</b> и <b>task.write</b> для создания и чтения заданий.</div>
+        </section>
+      </div>
+    </section>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

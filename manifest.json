@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Universal File Converter",
+  "version": "3.2.0",
+  "description": "Universal online file converter with user-supplied API keys and automatic multi-provider failover.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtDT+oETfh3o41SJ+eUA3Ku0WMtj9jQfjkd5gdA7Y1qOiq5nLFJ4uz3/gL53qzXii02AqIZle9zfi8uuMhYV13eVGRy2yeiD2K0su/R8AJzRr2igzz51vEik18pPNG6QWkiSMgMtmOy4mkSg4LVKcySU1/NiA+bN7lk0b7n0eMBtD0Mz6Uy13AR7Zrty6Hj/Lda4kBaSf7XDu2rr8nxwt53yT/q3+uu3MU+IqzKwUMGcax+kDZcqg3zB8bs4Z7bvnKTyYymVMGSIG9HDc2/SreukuzXrn4L8J754Gxx8X45irFWZmdc7638MJj5aAgQBQh678rKC/JR9cCEuddpPPqQIDAQAB",
+  "minimum_chrome_version": "120",
+  "action": {
+    "default_title": "Universal File Converter",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "permissions": [
+    "storage",
+    "downloads",
+    "alarms",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://api.convert3d.org/*",
+    "https://api.cloudconvert.com/*",
+    "https://upload.cloudconvert.com/*",
+    "https://v2.convertapi.com/*",
+    "https://api.freeconvert.com/*",
+    "https://*.freeconvert.com/*"
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
